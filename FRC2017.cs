@@ -17,9 +17,13 @@ namespace FRC2017
         const string customAuto = "My Auto";
         string autoSelected;
         SendableChooser chooser;
+
+        
+
         RobotDrive drive;
         Joystick stick;
-        
+        System.Timers.Timer time;
+        bool elapse;
         
         
         
@@ -52,6 +56,15 @@ namespace FRC2017
             autoSelected = (string)chooser.GetSelected();
             //autoSelected = SmartDashboard.GetString("Auto Selector", defaultAuto);
             Console.WriteLine("Auto selected: " + autoSelected);
+            time = new System.Timers.Timer(500);
+            time.AutoReset = false;
+            elapse = false;
+            time.Elapsed += TimeAlert;
+
+        }
+        private void TimeAlert(object source, System.Timers.ElapsedEventArgs e)
+        {
+            elapse = true;
         }
 
         /// <summary>
@@ -66,6 +79,11 @@ namespace FRC2017
                     break;
                 case defaultAuto:
                 default:
+                    if (!elapse)
+                    {
+                        time.Enabled = true;
+                        drive.ArcadeDrive(.1, 0);
+                    }
                     //Put default auto code here
                     break;
             }
@@ -80,8 +98,16 @@ namespace FRC2017
             //while teleop is enabled, and the drivestation is enabled, run this code
             while(IsOperatorControl && IsEnabled)
             {
-                //utilize our drive class to call the ArcadeDrive method and accept input from the stick/joystick object
-                drive.TankDrive(-stick.GetRawAxis(1), stick.GetRawAxis(5));
+
+                //Cubing a decimal makes the decimal smaller, and the actual stick axis is a decimal between 0 and 1
+
+                //these two doubles named "a" and "b" cube the actual raw stick value, and will make the controls 
+                //much less sensitive, or at least until we test it, it should go from mach 8 to mach 2
+                //we then pass these two doubles to the TankDrive method and voila, the robot drives.
+
+                double a = Math.Pow(stick.GetRawAxis(1), 3);
+                double b = Math.Pow(-stick.GetRawAxis(5), 3);
+                drive.TankDrive(a, b);
                 //create a delay of .1 second
                 Timer.Delay(0.1);
             }
